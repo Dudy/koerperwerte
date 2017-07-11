@@ -3,7 +3,7 @@
     <type>org.netbeans.modules.python.project</type>
     <configuration>
         <data xmlns="http://nbpython.dev.java.net/ns/php-project/1">
-            <name>koerperwerte3</name>
+            <name>koerperwerte</name>
             <sources>
                 <root id="src.koerperwerte3.dir"/>
             </sources>

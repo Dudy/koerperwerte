@@ -26,7 +26,7 @@ def daterange(start_date, end_date):
 
 def format_weight(weight):
     if weight == 0:
-        return '00,0'
+        return '0,0'
     else:
         return ('0' if weight < 10 else '') + str(weight / 10.0).replace('.', ',')
 
@@ -61,10 +61,11 @@ class Day:
     
     def __str__(self):
         user_string = ''
-        for identity,value in self.users:
+        
+        for identity,value in self.entries.iteritems():
             user_string = user_string + identity + ' (' + str(value) + ') '
         
-        return 'Day(' + str(self.datum) + ', ' + user_string
+        return 'Day(' + str(self.datum) + ', ' + user_string + ')'
     
     def add_entry(self, identity, weight):
         self.entries[identity] = weight
@@ -83,68 +84,25 @@ class MainPage(webapp2.RequestHandler):
                 'url_linktext': 'Login',
             }
 
-        template = JINJA_ENVIRONMENT.get_template('index2.html')
+        template = JINJA_ENVIRONMENT.get_template('index.html')
         self.response.write(template.render(template_values))
     
     def template_values_with_user(self, user):
         group_name = self.request.get('group_name', DEFAULT_GROUP_NAME)
         parent_key = koerperwerte_key(group_name)
         
-        single_weighings = self.get_weighings(parent_key)
-
-        persons = set()
-        person_identities = []
-        current_user_found = False
-        for single_weighing in single_weighings:
-            persons.add(single_weighing.person.email)
-            person_identities.append(single_weighing.person.identity)
-            if user.user_id() == single_weighing.person.identity:
-                current_user_found = True
-        if not current_user_found:
-            persons.add(user.email())
-            person_identities.append(user.user_id())
-            weighing = Weighing(parent=koerperwerte_key(group_name))
-            weighing.datum = date.today()
-            weighing.weight = 0
-            weighing.person = Person(identity = user.user_id(), email = user.email())
-            single_weighings.append(weighing)
-
-        dates = set()
-        days_dict = {}
-        for single_weighing in single_weighings:
-            weighing_date = single_weighing.datum
-            day = days_dict.get(weighing_date, Day(datum = weighing_date))
-            day.add_entry(single_weighing.person.identity, single_weighing.weight)
-            days_dict[weighing_date] = day
-            dates.add(weighing_date)
-
-        # normalize
-        for days_date in days_dict:
-            day = days_dict[days_date]
-            days_persons = []
-            for entry in day.entries:
-                days_persons.append(entry)
-            for identity in person_identities:
-                if identity not in days_persons:
-                    day.add_entry(identity, 0)
-
-        days = []
-        start_date = min(dates)
-        end_date = max(dates) + timedelta(days = 1)
-        date_range = daterange(start_date, end_date)
-        for single_date in date_range:
-            if single_date in dates:
-                days.append(days_dict[single_date])
-            else:
-                days.append(Day(datum = single_date))
-
+        single_weighings = self.get_weighings(parent_key, user)
+        persons, person_identities = self.get_persons(single_weighings, user, parent_key)
+        dates, days_dict = self.get_dates(single_weighings)
+        days = reversed(self.normalize_days(days_dict, person_identities, dates))
+                
         url = users.create_logout_url(self.request.uri)
         url_linktext = 'Logout'
 
         template_values = {
             'persons': persons,
             'user': user,
-            'days': reversed(days),
+            'days': days,
             'group_name': urllib.quote_plus(group_name),
             'url': url,
             'url_linktext': url_linktext,
@@ -152,7 +110,7 @@ class MainPage(webapp2.RequestHandler):
 
         return template_values
     
-    def get_weighings(self, parent_key):
+    def get_weighings(self, parent_key, user):
         weighings_query = Weighing.query(ancestor=parent_key).order(Weighing.datum)
         weighings = weighings_query.fetch()
 
@@ -166,6 +124,57 @@ class MainPage(webapp2.RequestHandler):
                 weighings.append(weighing)
         
         return weighings
+    
+    def get_persons(self, single_weighings, user, parent_key):
+        persons = set()
+        person_identities = []
+        current_user_found = False
+        for single_weighing in single_weighings:
+            persons.add(single_weighing.person.email)
+            person_identities.append(single_weighing.person.identity)
+            if user.user_id() == single_weighing.person.identity:
+                current_user_found = True
+        if not current_user_found:
+            persons.add(user.email())
+            person_identities.append(user.user_id())
+            weighing = Weighing(parent=parent_key)
+            weighing.datum = date.today()
+            weighing.weight = 0
+            weighing.person = Person(identity = user.user_id(), email = user.email())
+            single_weighings.append(weighing)
+        return persons,person_identities
+    
+    def get_dates(self, single_weighings):
+        dates = set()
+        days_dict = {}
+        for single_weighing in single_weighings:
+            weighing_date = single_weighing.datum
+            day = days_dict.get(weighing_date, Day(datum = weighing_date))
+            day.add_entry(single_weighing.person.identity, single_weighing.weight)
+            days_dict[weighing_date] = day
+            dates.add(weighing_date)
+        return dates, days_dict
+    
+    def normalize_days(self, days_dict, person_identities, dates):
+        days = []
+        start_date = min(dates)
+        end_date = max(dates) + timedelta(days = 1)
+        date_range = daterange(start_date, end_date)
+        
+        for single_date in date_range:
+            if single_date not in dates:
+                days_dict[single_date] = Day(datum = single_date)
+            days.append(days_dict[single_date])
+        
+        for days_date in days_dict:
+            day = days_dict[days_date]
+            days_persons = []
+            for entry in day.entries:
+                days_persons.append(entry)
+            for identity in person_identities:
+                if identity not in days_persons:
+                    day.add_entry(identity, 0)
+        return days
 
 class Koerperwerte(webapp2.RequestHandler):
 

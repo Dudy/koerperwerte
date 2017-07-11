@@ -65,10 +65,12 @@ tbody tr {
     background-color: #e9e9e9;
 }
 
-
+.table > thead > tr > td.active, .table > tbody > tr > td.active, .table > tfoot > tr > td.active, .table > thead > tr > th.active, .table > tbody > tr > th.active, .table > tfoot > tr > th.active, .table > thead > tr.active > td, .table > tbody > tr.active > td, .table > tfoot > tr.active > td, .table > thead > tr.active > th, .table > tbody > tr.active > th, .table > tfoot > tr.active > th {
+    background-color: lightblue;
+}
             
             input {
-                border: none;
+                border: solid 1px blue;
                 width: 100%;
                 height: 99%;
                 outline: none;

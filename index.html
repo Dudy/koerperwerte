@@ -2,12 +2,26 @@
 {% autoescape true %}
 <html>
     <head>
+        <title>Koerperwerte</title>
         <link href="bootstrap/css/bootstrap.css" rel="stylesheet" type="text/css"/>
+        <link href="bootstrap/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css"/>
         <style type="text/css">
             body {
                 padding-top: 60px;
                 padding-bottom: 40px;
-                background-color: #f5f5f5;
+                background-color: #ffffff;
+                
+                
+  font-family: "Helvetica Neue", Helvetica, Arial;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: #3b3b3b;
+  -webkit-font-smoothing: antialiased;
+  font-smoothing: antialiased;
+  background: #2b2b2b;
+  color: #aaaaaa;
+                
             }
 
             .navbar {
@@ -20,7 +34,7 @@
                 color: #333333;
             }
 
-            table {
+/*            table {
                 width: 100%;
                 table-layout: fixed;
             }
@@ -32,7 +46,26 @@
 
             td.active {
                 background-color: beige;
-            }
+            }*/
+
+thead {
+    background-color: #2980b9;
+    color: #ffffff;
+}
+
+tbody tr {
+    color: #3b3b3b;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: #f6f6f6;
+}
+
+.table-striped > tbody > tr:nth-of-type(even) {
+    background-color: #e9e9e9;
+}
+
+
             
             input {
                 border: none;
@@ -41,6 +74,7 @@
                 outline: none;
             }
         </style>
+        
     </head>
     <body>
         <!-- Fixed navbar -->
@@ -58,8 +92,8 @@
 
                 <div id="navbar" class="navbar-collapse collapse">
                     <ul class="nav navbar-nav pull-left">
-                        <li class="active"><a href="#">Home</a></li>
-                        <li><a href="#about">About</a></li>
+                        <li><a href="#">Home</a></li>
+                        <li class="active"><a href="#weight">Gewicht</a></li>
                         <li><a href="#contact">Contact</a></li>
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Dropdown <span class="caret"></span></a>
@@ -93,28 +127,29 @@
             
             <h3>{{ group_name }}</h3>
             
-            <table border="1">
-                <thead>
-                    <tr>
-                        <th>Datum</th>
-                        {% for person in persons %}
-                        <th>{{ person }}</th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for day in days %}
-                    <tr>
-                        <td>{{ day.datum }}</td>
-                        
-                        {% for entry in day.entries %}
-                        <td>{{ day.entries[entry]|format_weight }}</td>
-                        {% endfor %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Datum</th>
+                            {% for person in persons %}
+                            <th>{{ person }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for day in days %}
+                        <tr>
+                            <td>{{ day.datum }}</td>
 
+                            {% for entry in day.entries %}
+                            <td>{{ day.entries[entry]|format_weight }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
